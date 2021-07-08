@@ -82,8 +82,9 @@ while args:
         args.pop(0)
         out = args.pop(0)
         print('out:', out)
-    if args[0] == '--help':
+    if not len(args) == 0 and args[0] == '--help':
         print('Usage: plot_xrd --raw <paths-to-xrd-data-files> --labels <plot-labels> --out <path-to-output-figure>')
+        quit()
     if not len(args) == 0:
         args.pop(0)
 
