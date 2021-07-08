@@ -55,23 +55,24 @@ def import_xrds(paths):
     data = list()
     paths_items = paths.items()
     for label, path in paths_items:
-        x, y = np.loadtxt(fname = path, delimiter = '\t', unpack = True)
-        data.append((x, y, label))
+        x, y = np.loadtxt(fname = path, skiprows = 1, unpack = True)
+        y_rel = y / y.max()
+        data.append((x, y_rel, label))
 
     return data
 
 # script starts here
 
 args = sys.argv.copy()
-specs = list()
+raw_data = list()
 labels = list()
 out = list()
 while args:
-    if args[0] == '--specs':
+    if args[0] == '--raw':
         args.pop(0)
         while not len(args) == 0 and '--' not in args[0]:
-            specs.append(args.pop(0))
-        print('specs:', specs)
+            raw_data.append(args.pop(0))
+        print('raw_data:', raw_data)
     if args[0] == '--labels':
         args.pop(0)
         while not len(args) == 0 and '--' not in args[0]:
@@ -84,10 +85,10 @@ while args:
     if not len(args) == 0:
         args.pop(0)
 
-paths = dict(zip(labels, specs))
+paths = dict(zip(labels, raw_data))
 print("paths:", paths)
-data = import_ftirs(paths)
+data = import_xrds(paths)
 fig, ax = plt.subplots()
 fig.set_size_inches(w = 1024/96, h = 768/96)
-plot_ftir(ax, data)
+plot_xrd(ax, data)
 fig.savefig(fname = out, dpi = 96, format = 'png')
