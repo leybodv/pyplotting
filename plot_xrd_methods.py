@@ -57,3 +57,39 @@ def import_xrds(paths):
         data.append((x, y_rel, label))
 
     return data
+
+def import_diff_peaks(filepath, wavelength, cardid = None, phasename = None):
+    """
+    Imports peaks from diff file in a form of d/intensity values and converts them to 2*thetta / relative intensity
+
+    Parameters
+    ----------
+    filepath : str
+        path to diff file with d/intensity columns
+
+    wavelength : float
+        wavelength of X-ray radiation in Angstroms
+
+    cardid : str (default : None)
+        card number in database of diffraction data
+
+    phasename : str (default : None)
+        phase name the peaks belong to
+
+    Returns
+    -------
+    data : tuple
+        tuple with data in a format (cardid, phasename, <2*thetta>, <i_rel>)
+
+    2*thetta : ndarray
+        array of 2*thetta values
+
+    i_rel : ndarray
+        array of relative intensity values
+    """
+    d, i = np.loadtxt(fname = filepath, unpack = True)
+    i_rel = i / i.max()
+    dthetta = 2 * np.arcsin(wavelength / 2 / d) * 180 / np.pi
+    i_rel = i_rel[~np.isnan(dthetta)]
+    dthetta = dthetta[~np.isnan(dthetta)]
+    return (cardid, phasename, dthetta, i_rel)
