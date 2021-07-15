@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.constants as spc
 import matplotlib.pyplot as plt
 import plot_utils
 
@@ -76,6 +77,24 @@ def plot_uvvis(ax, data):
             x_min = wavelength.min()
         ax.plot(wavelength, absorbance, label = label)
     ax.set_xlim(left = x_min, right = x_max)
+    ax.set_xlabel('Wavelength, nm')
+    ax.set_ylabel('Absorbance, $\mathregular{cm^{-1}}$')
+    ax.grid(linestyle = '--')
+    ax.legend()
+    return ax
+
+def plot_tauc(ax, data, power):
+    """
+    """
+    tauc_data = list()
+    for label, wavelength, absorbance in data:
+        y_tauc = ((absorbance * (10**2) * spc.h * (spc.c * (10 ** 9) / wavelength)) / spc.e) ** power # (eV / m)^power
+        x_tauc = (spc.h * spc.c * (10 ** 9) / wavelength) / spc.e # eV
+        tauc_data.append((label, x_tauc, y_tauc))
+    for label, x_tauc, y_tauc in tauc_data:
+        ax.plot(x_tauc, y_tauc, label = label)
+    ax.set_xlabel('E, eV')
+    ax.set_ylabel(f'$\mathregular{{(αE)^{{{power}}}}}$')
     ax.grid(linestyle = '--')
     ax.legend()
     return ax
