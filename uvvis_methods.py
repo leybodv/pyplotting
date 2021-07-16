@@ -85,16 +85,42 @@ def plot_uvvis(ax, data):
 
 def plot_tauc(ax, data, power):
     """
+    Plots uv-vis data in Tauc coordinates:
+        (<absorbance> * <energy>)^power vs. <energy>
+
+    Parameters
+    ----------
+    ax : Axes
+        axes to plot to
+
+    data : list
+        list of tuples in a format (<label>, <wavelength>, <absorbance>)
+        <label> : str
+            label of the plot
+        <wavelength> : ndarray
+            array of wavelength in nm
+        <absorbance> : ndarray
+            array of absorbances in cm^(-1)
+
+    power : float
+        power in the Tauc's equation:
+            1/2 - for direct transitions
+            2 - for indirect transitions
     """
     tauc_data = list()
     for label, wavelength, absorbance in data:
-        y_tauc = ((absorbance * (10**2) * spc.h * (spc.c * (10 ** 9) / wavelength)) / spc.e) ** power # (eV / m)^power
-        x_tauc = (spc.h * spc.c * (10 ** 9) / wavelength) / spc.e # eV
+        energy = (spc.h * spc.c * 10**9 / wavelength) / spc.e # in eV
+        y_tauc = (absorbance * 10**2 * energy) ** power # in [eV / m]^power
+        x_tauc = energy # in eV
         tauc_data.append((label, x_tauc, y_tauc))
     for label, x_tauc, y_tauc in tauc_data:
         ax.plot(x_tauc, y_tauc, label = label)
     ax.set_xlabel('E, eV')
     ax.set_ylabel(f'$\mathregular{{(αE)^{{{power}}}}}$')
+    if power == 2:
+        ax.set_title("Indirect transitions")
+    if power == 0.5:
+        ax.set_title("Direct transitions")
     ax.grid(linestyle = '--')
     ax.legend()
     return ax
