@@ -36,7 +36,7 @@ def import_data(labels, paths):
 #        with open(file = path, mode = 'r', encoding = 'utf-8') as f:
 #            for line in f:
 #                print(line.replace('\t', '->').replace('\n', '¶').replace('\r', '|'))
-        wavelength, absorbance = np.loadtxt(path, delimiter = '\t', skiprows = 1, encoding = 'utf-8', unpack = True)
+        wavelength, absorbance = np.loadtxt(path, delimiter = '\t', skiprows = 1, usecols = (0, 1), encoding = 'utf-8', unpack = True)
         data.append((label, wavelength, absorbance))
     return data
 
