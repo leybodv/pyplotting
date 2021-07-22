@@ -4,6 +4,7 @@ import scipy.optimize as spopt
 import scipy.signal as spsig
 import matplotlib.pyplot as plt
 import plot_utils
+import math
 
 def linear_func(x, k, b):
     """
@@ -229,6 +230,8 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
     print(f'plot_uvvis.plot_tauc:') # LOG
     tauc_data = calculate_tauc(data, power)
     tmp_y_tauc = tauc_data[0][2]
+    y_lim_bottom = math.inf
+    y_lim_top = -math.inf
     for i in range(len(tauc_data)):
         label, x_tauc, y_tauc, power = tauc_data[i]
         if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
@@ -244,8 +247,17 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
                 bandgap_y = bandgap_y + delta_y
                 baseline_y = baseline_y + delta_y
                 bandgap_line_y = bandgap_line_y + delta_y
+        if y_tauc.max() > y_lim_top:
+            y_lim_top = y_tauc.max()
+        if y_tauc.min() < y_lim_bottom:
+            y_lim_bottom = y_tauc.min()
         color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i]
         ax.plot(x_tauc, y_tauc, label = label, color = color)
+        if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
+            ax.plot(baseline_x, baseline_y, color = color, linestyle = '--', linewidth = 0.5)
+            ax.plot(bandgap_line_x, bandgap_line_y, color = color, linestyle = '--', linewidth = 0.5)
+            ax.vlines(x = bandgap_x, ymin = y_lim_bottom * 0.95, ymax = bandgap_y, color = color, linestyle = '--', linewidth = 0.5)
+    ax.set_ylim(bottom = y_lim_bottom * 0.95, top = y_lim_top * 1.05)
     ax.set_xlabel('E, eV')
     ax.set_ylabel(f'$\mathregular{{(αE)^{{{power}}}}}$')
     if power == 2:
