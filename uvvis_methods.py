@@ -184,17 +184,6 @@ def calculate_tauc_diff(raw_data, power):
         tauc_data_diff.append((label, x_diff, y_diff, power))
     return tauc_data_diff
 
-def calculate_tauc_sec_diff(raw_data, power):
-    """
-    """
-    tauc_data_sec_diff = list()
-    tauc_data = calculate_tauc(raw_data, power)
-    for label, x_tauc, y_tauc, power in tauc_data:
-        x_diff, y_diff = differentiate(x_tauc, y_tauc)
-        x_sec_diff, y_sec_diff = differentiate(x_diff, y_diff)
-        tauc_data_sec_diff.append((label, x_sec_diff, y_sec_diff, power))
-    return tauc_data_sec_diff
-
 def fit_tauc_linear(x, y, low_x, high_x):
     """
     """
@@ -244,18 +233,22 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
     y_lim_bottom = math.inf
     y_lim_top = -math.inf
     for i in range(len(tauc_data)):
+        print(f'{i = }') # LOG
         label, x_tauc, y_tauc, power = tauc_data[i]
         if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
-            bandgap, baseline, bandgap_line = calculate_bandgap(x_tauc, y_tauc, baseline_low_x, baseline_high_x, bandgap_low_x, bandgap_high_x)
+            bandgap, baseline, bandgap_line = calculate_bandgap(x_tauc, y_tauc, baseline_low_x[i], baseline_high_x[i], bandgap_low_x[i], bandgap_high_x[i])
+            print(f'{bandgap = }') # LOG
             bandgap_x, bandgap_y = bandgap
             baseline_x, baseline_y = baseline
             bandgap_line_x, bandgap_line_y = bandgap_line
         if i != 0:
-            y_tauc = plot_utils.stack_by_percent(tmp_y_tauc, y_tauc)
-            delta_y = y_tauc - tmp_y_tauc
+            y_tauc_raised = plot_utils.stack_by_percent(tmp_y_tauc, y_tauc)
+            delta_y = y_tauc_raised - y_tauc
+            print(f'{delta_y = }') # LOG
+            y_tauc = y_tauc_raised
             tmp_y_tauc = y_tauc
             if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
-                bandgap_y = bandgap_y + delta_y
+                bandgap_y = bandgap_y + delta_y[0]
                 baseline_y = baseline_y + delta_y
                 bandgap_line_y = bandgap_line_y + delta_y
         if y_tauc.max() > y_lim_top:
@@ -267,15 +260,18 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
         if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
             ax.plot(baseline_x, baseline_y, color = color, linestyle = '--', linewidth = 0.5)
             ax.plot(bandgap_line_x, bandgap_line_y, color = color, linestyle = '--', linewidth = 0.5)
+            print(f'{bandgap_x = }') # LOG
+            print(f'{y_lim_bottom = }') # LOG
+            print(f'{bandgap_y = }') # LOG
             ax.vlines(x = bandgap_x, ymin = y_lim_bottom * 0.95, ymax = bandgap_y, color = color, linestyle = '--', linewidth = 0.5)
             ax.annotate(text = f'{bandgap_x:.2f}', xy = (bandgap_x, y_lim_bottom * 0.95), verticalalignment = 'top', horizontalalignment = 'center', rotation = 'vertical')
     ax.set_ylim(bottom = y_lim_bottom * 0.95, top = y_lim_top * 1.05)
     ax.set_xlabel('E, eV')
     ax.set_ylabel(f'$\mathregular{{(αE)^{{{power}}}}}$')
     if power == 2:
-        ax.set_title("Indirect transitions")
-    if power == 0.5:
         ax.set_title("Direct transitions")
+    if power == 0.5:
+        ax.set_title("Indirect transitions")
     ax.grid(linestyle = '--')
     ax.legend()
     return ax
@@ -295,48 +291,27 @@ def calculate_bandgap(x_tauc, y_tauc, baseline_low_x, baseline_high_x, bandgap_l
     bandgap_line = (x_tauc, linear_func(x_tauc, k_bandgap, b_bandgap))
     return ((bandgap_x, bandgap_y), baseline, bandgap_line)
 
-def plot_tauc_diff(ax, data, power):
+def plot_tauc_diff(ax, data, power, smooth = False):
     """
     """
     tauc_data_diff = calculate_tauc_diff(data, power)
     tmp_y = tauc_data_diff[0][2]
-    tmp_y_smooth = spsig.savgol_filter(tauc_data_diff[0][2], 15, 5)
+    if smooth:
+        tmp_y_smooth = spsig.savgol_filter(tauc_data_diff[0][2], 15, 5)
     for i in range(len(tauc_data_diff)):
         l, x, y, p = tauc_data_diff[i]
-        y_smooth = spsig.savgol_filter(y, 15, 5)
+        if smooth:
+            y_smooth = spsig.savgol_filter(y, 15, 5)
         if i != 0:
             y = plot_utils.stack_by_percent(tmp_y, y)
-            y_smooth = plot_utils.stack_by_percent(tmp_y_smooth, y_smooth)
+            if smooth:
+                y_smooth = plot_utils.stack_by_percent(tmp_y_smooth, y_smooth)
             tmp_y = y
         ax.plot(x, y, label = l)
-        ax.plot(x, y_smooth)
+        if smooth:
+            ax.plot(x, y_smooth)
     ax.set_xlabel('E, eV')
     ax.set_ylabel(f'$\mathregular{{d[(αE)^{{{power}}}]/d[E]}}$')
-    if power == 2:
-        ax.set_title("Indirect transitions")
-    if power == 0.5:
-        ax.set_title("Direct transitions")
-    ax.grid(linestyle = '--')
-    ax.legend()
-    return ax
-
-def plot_tauc_sec_diff(ax, data, power):
-    """
-    """
-    tauc_data_sec_diff = calculate_tauc_sec_diff(data, power)
-    tmp_y = tauc_data_sec_diff[0][2]
-#    tmp_y_smooth = spsig.savgol_filter(tauc_data_sec_diff[0][2], 11, 1)
-    for i in range(len(tauc_data_sec_diff)):
-        l, x, y, p = tauc_data_sec_diff[i]
-#        y_smooth = spsig.savgol_filter(y, 11, 1)
-        if i != 0:
-            y = plot_utils.stack_by_percent(tmp_y, y)
-#            y_smooth = plot_utils.stack_by_percent(tmp_y_smooth, y_smooth)
-            tmp_y = y
-        ax.plot(x, y, label = l)
-#        ax.plot(x, y_smooth)
-    ax.set_xlabel('E, eV')
-    ax.set_ylabel(f'$\mathregular{{d^{{2}}[(αE)^{{{power}}}]/d[E]^{{2}}}}$')
     if power == 2:
         ax.set_title("Indirect transitions")
     if power == 0.5:
