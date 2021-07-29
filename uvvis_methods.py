@@ -8,11 +8,41 @@ import math
 
 def linear_func(x, k, b):
     """
+    Calculates values of linear function k * x + b
+
+    Parameters
+    ----------
+    x : float or list or ndarray
+        values of independent variables
+    k : float
+        coefficient in an equation k * x + b
+    b : float
+        coefficient in an equation k * x + b
+
+    Returns
+    -------
+    y : float or list or ndarray
+        values of dependent variable
     """
     return k * x + b
 
 def differentiate(x, y):
     """
+    Finds first derivative from (x, y) data points numerically as dy/dx|x[i] = (y[i+1] - y[i-1]) / (x[i+1] - x[i-1])
+
+    Parameters:
+    -----------
+    x : ndarray
+        abscissa values
+    y : ndarray
+        ordinate values
+
+    Returns:
+    --------
+    dx : ndarray
+        x values, size of new array decreased by 2 elements from the beginning and the end of initial array
+    dydx : ndarray
+        dy/dx values
     """
     dx = list()
     dydx = list()
@@ -186,18 +216,27 @@ def calculate_tauc_diff(raw_data, power):
 
 def fit_tauc_linear(x, y, low_x, high_x):
     """
+    Fits part of Tauc's plot data by line
+
+    Parameters:
+    -----------
+    x : ndarray
+        Tauc's x coordinates
+    y : ndarray
+        Tauc's y coordinates
+    low_x : float
+        lower x limit to fit data from
+    high_x : float
+        higher x limit to fit data to
+
+    Retutns:
+    --------
+    popt : array
+        Optimal values for the parameters k, b of linear function k * x + b calculated by least squares method (See: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html)
+    pcov: 2-D array
+        The estimated covariance of popt (See: https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.curve_fit.html)
     """
     print(f'uvvis_methods.fit_tauc_linear:') # LOG
-    print(f'{x = }') # LOG
-    print(f'{x.size = }') # LOG
-    print(f'{y = }') # LOG
-    print(f'{y.size = }') # LOG
-    print(f'{low_x = }') # LOG
-    print(f'{high_x = }') # LOG
-    print(f'{x >= low_x = }') # LOG
-    print(f'{(x >= low_x).size = }') # LOG
-    print(f'{x <= high_x = }') # LOG
-    print(f'{(x <= high_x).size = }') # LOG
     x_lim = x[np.logical_and(x >= low_x, x <= high_x)]
     y_lim = y[np.logical_and(x >= low_x, x <= high_x)]
     fitted_data = spopt.curve_fit(linear_func, x_lim, y_lim)
@@ -224,8 +263,8 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
 
     power : float
         power in the Tauc's equation:
-            1/2 - for direct transitions
-            2 - for indirect transitions
+            1/2 - for indirect transitions
+            2 - for direct transitions
     """
     print(f'plot_uvvis.plot_tauc:') # LOG
     tauc_data = calculate_tauc(data, power)
@@ -237,14 +276,12 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
         label, x_tauc, y_tauc, power = tauc_data[i]
         if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
             bandgap, baseline, bandgap_line = calculate_bandgap(x_tauc, y_tauc, baseline_low_x[i], baseline_high_x[i], bandgap_low_x[i], bandgap_high_x[i])
-            print(f'{bandgap = }') # LOG
             bandgap_x, bandgap_y = bandgap
             baseline_x, baseline_y = baseline
             bandgap_line_x, bandgap_line_y = bandgap_line
         if i != 0:
             y_tauc_raised = plot_utils.stack_by_percent(tmp_y_tauc, y_tauc)
             delta_y = y_tauc_raised - y_tauc
-            print(f'{delta_y = }') # LOG
             y_tauc = y_tauc_raised
             tmp_y_tauc = y_tauc
             if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
@@ -260,9 +297,6 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
         if baseline_low_x != None and baseline_high_x != None and bandgap_low_x != None and bandgap_high_x != None:
             ax.plot(baseline_x, baseline_y, color = color, linestyle = '--', linewidth = 0.5)
             ax.plot(bandgap_line_x, bandgap_line_y, color = color, linestyle = '--', linewidth = 0.5)
-            print(f'{bandgap_x = }') # LOG
-            print(f'{y_lim_bottom = }') # LOG
-            print(f'{bandgap_y = }') # LOG
             ax.vlines(x = bandgap_x, ymin = y_lim_bottom * 0.95, ymax = bandgap_y, color = color, linestyle = '--', linewidth = 0.5)
             ax.annotate(text = f'{bandgap_x:.2f}', xy = (bandgap_x, y_lim_bottom * 0.95), verticalalignment = 'top', horizontalalignment = 'center', rotation = 'vertical')
     ax.set_ylim(bottom = y_lim_bottom * 0.95, top = y_lim_top * 1.05)
@@ -278,7 +312,39 @@ def plot_tauc(ax, data, power, baseline_low_x = None, baseline_high_x = None, ba
 
 def calculate_bandgap(x_tauc, y_tauc, baseline_low_x, baseline_high_x, bandgap_low_x, bandgap_high_x):
     """
+    Calculates Tauc's bandgap as intersection of baseline line and linear fit of the part of Tauc's data
+
+    Parameters:
+    -----------
+    x_tauc : ndarray
+        x values of Tauc's data
+    y_tauc : ndarray
+        y values of Tauc's data
+    baseline_low_x : float
+        lower limit of x to fit Tauc's data by line for baseline
+    baseline_high_x : float
+        higher limit of x to fit Tauc's data by line for baseline
+    bandgap_low_x : float
+        lower limit of x to fit Tauc's data
+    bandgap_high_x : float
+        higher limit of x to fit Tauc's data
+
+    Returns:
+    -------
+    (bandgap_x, bandgap_y) : tuple
+        bandgap_x : float
+        bandgap_y : float
+            coordinate of intersection of baseline with fitted line of the part of Tauc's data, x is the bandgap value
+    (baseline_x, baseline_y) : tuple
+        baseline_x : ndarray
+        baseline_y : ndarray
+            coordinates of baseline
+    (bandgap_line_x, bandgap_line_y) : tuple
+        bandgap_line_x : ndarray
+        bandgap_line_y : ndarray
+            coordinates of fitted line of the part of Tauc's data
     """
+    print(f'uvvis_methods.calculate_bandgap') # LOG
     baseline_fitted_data = fit_tauc_linear(x_tauc, y_tauc, baseline_low_x, baseline_high_x)
     bandgap_fitted_data = fit_tauc_linear(x_tauc, y_tauc, bandgap_low_x, bandgap_high_x)
     k_baseline = baseline_fitted_data[0][0]
@@ -289,10 +355,36 @@ def calculate_bandgap(x_tauc, y_tauc, baseline_low_x, baseline_high_x, bandgap_l
     bandgap_y = linear_func(bandgap_x, k_bandgap, b_bandgap)
     baseline = (x_tauc, linear_func(x_tauc, k_baseline, b_baseline))
     bandgap_line = (x_tauc, linear_func(x_tauc, k_bandgap, b_bandgap))
+    print(f'{bandgap_x = }') # LOG
     return ((bandgap_x, bandgap_y), baseline, bandgap_line)
 
 def plot_tauc_diff(ax, data, power, smooth = False):
     """
+    Plots first derivative of Tauc's data. The plot can be used for more accurate choise of limits for linear fit of Tauc's data
+
+    Parameters:
+    -----------
+    ax : Axes
+        axes object to draw to
+    data : list
+        raw uv-vis data, list of tuples in a format (<label>, <wavelength>, <absorbance>)
+        <label> : str
+            label of the plot
+        <wavelength> : ndarray
+            array of wavelength in nm
+        <absorbance> : ndarray
+            array of absorbances in cm^(-1)
+    power : float
+        power in the Tauc's equation:
+            1/2 - for indirect transitions
+            2 - for direct transitions
+    smooth : boolean
+        whether to use smoothing by Savitzky-Golay method with window_length = 15 and polyorder = 5 (See: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.savgol_filter.html), smoothed curve is drawn on top of unsmoothed one
+
+    Returns:
+    -------
+    ax : Axes
+        axes object with first derivative of Tauc's data plot
     """
     tauc_data_diff = calculate_tauc_diff(data, power)
     tmp_y = tauc_data_diff[0][2]
