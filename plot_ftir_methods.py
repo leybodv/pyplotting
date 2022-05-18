@@ -52,7 +52,10 @@ def import_ftirs(paths):
     data = list()
     paths_items = paths.items()
     for label, path in paths_items:
-        x, y = np.loadtxt(fname = path, delimiter = '\t', unpack = True)
+        try:
+            x, y = np.loadtxt(fname = path, delimiter = '\t', unpack = True)
+        except Exception:
+            x, y = np.loadtxt(fname = path, delimiter=' ', unpack=True)
         data.append((x, y, label))
 
     return data
